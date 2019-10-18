@@ -170,23 +170,25 @@ else:
 	logging.basicConfig(format='[%(asctime)s] %(message)s', level=logging.INFO)
 
 
-# Connect to game server
-GameServer = ServerComms(args.hostname, args.port)
 
-# Spawn our tank
-logging.info("Creating tank with name '{}'".format(args.name))
 
 def logic(name):
+	print ("Inside logic")
+
+	# Connect to game server
+	GameServer = ServerComms(args.hostname, args.port)
 
 	GameServer.sendMessage(ServerMessageTypes.CREATETANK, {'Name': name})
 
+	# Spawn our tank
+	logging.info("Creating tank with name '{}'".format(args.name))
+	
 	# Main loop - read game messages, ignore them and randomly perform actions
 	i=0
 
 	while True:
 		message = GameServer.readMessage() # time between receving messages is approx. 0.35 seconds
 	    
-		print ()
 
 		if i == 5:
 			if random.randint(0, 10) > 5:
@@ -202,9 +204,6 @@ def logic(name):
 		if i > 20:
 			i = 0
 
-		previous = nxt
-		cur+=1
-
 class Tank(threading.Thread):
 	def __init__(self, threadID, name):
 		threading.Thread.__init__(self)
@@ -212,8 +211,28 @@ class Tank(threading.Thread):
 		self.name = name
 
 	def run(self):
-		print ("Starting thread ", threadID, "\n")
-		logic(name)
+		print ("Inside run method for thread ", self.threadID)
+		logic(self.name)
+		print("Logic returned without error")
 
-tank1 = Tank(1, "lo-pressure")
-tank2 = Tank(2, "lo-pressure")
+# separate threads will need separate ports, how to config this?
+
+threads = []
+
+for i in range(1,5):
+	threads.append(Tank(i, "lo-pressure:tank"+str(i)))
+	print(threads[i-1].name)
+	threads[i-1].start()
+	print(threads[i-1].name + " started\n")
+
+for t in threads:
+	t.join() # threads should never terminate - get killed when game ends and manually closed
+
+#tank1 = Tank(1, "lo-pressure")
+#tank2 = Tank(2, "lo-pressure")
+
+#tank1.start()
+#tank2.start()
+
+#tank1.join()
+#tank2.join()
