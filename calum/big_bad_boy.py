@@ -167,6 +167,20 @@ def getheading(pos1, pos2):
 def distance(pos1, pos2):
  	return np.sqrt((pos2[1] - pos1[1])**2 + (pos2[0] - pos1[0])**2)
 
+def moveTo(newpos,tank_dict):
+	# get current position from tank_dict
+	curpos = (tank_dict['X'],tank_dict['Y'])
+	
+	# get direction, turn to face,
+	h = getheading(curpos, newpos)
+	GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': h})
+
+	# then move forward
+	d = distance(curpos, newpos)
+	GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': d})
+	return
+
+
 def update(tank_dict):
 	while True:
 		start_time = time.time()
