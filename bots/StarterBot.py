@@ -173,7 +173,6 @@ else:
 
 
 def logic(name):
-	print ("Inside logic")
 
 	# Connect to game server
 	GameServer = ServerComms(args.hostname, args.port)
@@ -211,12 +210,10 @@ class Tank(threading.Thread):
 		self.name = name
 
 	def run(self):
-		print ("Inside run method for thread ", self.threadID)
+		#print ("Inside run method for thread ", self.threadID)
 		logic(self.name)
-		print("Logic returned without error")
 
-# separate threads will need separate ports, how to config this?
-
+# Create 4 Tanks, each on a separate thread, and give them the AI corresponding to the logic function
 threads = []
 
 for i in range(1,5):
@@ -227,12 +224,3 @@ for i in range(1,5):
 
 for t in threads:
 	t.join() # threads should never terminate - get killed when game ends and manually closed
-
-#tank1 = Tank(1, "lo-pressure")
-#tank2 = Tank(2, "lo-pressure")
-
-#tank1.start()
-#tank2.start()
-
-#tank1.join()
-#tank2.join()
