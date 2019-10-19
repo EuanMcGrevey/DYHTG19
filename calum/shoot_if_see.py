@@ -176,17 +176,17 @@ def update(state):
 		message = GameServer.readMessage()
 		end_time = time.time()
 	
-		if message['messageType'] == 18:
-			if message['Type'] == 'Tank':
+		if message['messageType'] == 18 and message['Type'] == 'Tank':
 				if message['Name'] == args.name:
 					my_pos = (message['X'],message['Y'])
 					my_heading = message['Heading']
 
-				else:
-					if state == 'searching':
-						state = 'targeting'
-					target_pos = (message['X'],message['Y'])
-					GameServer.sendMessage(ServerMessageTypes.STOPTURN)
+				elif state == 'searching':
+					state = 'targeting'
+				# Don't know of any way to target closest possible target
+				target_pos = (message['X'],message['Y'])
+				GameServer.sendMessage(ServerMessageTypes.STOPTURN)
+		
 		elif message['messageType'] == 24:
 			state = 'banking'
                         
@@ -204,7 +204,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
 parser.add_argument('-H', '--hostname', default='127.0.0.1', help='Hostname to connect to')
 parser.add_argument('-p', '--port', default=8052, type=int, help='Port to connect to')
-parser.add_argument('-n', '--name', default='TeamA:RandomBot', help='Name of bot')
+parser.add_argument('-n', '--name', default='Lo-pressure:Shoot_if_see', help='Name of bot')
 args = parser.parse_args()
 
 # Set up console logging
@@ -239,15 +239,16 @@ while True:
 	elif state == 'targeting':
 		heading = getheading(my_pos, target_pos)
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
-		#time.sleep(2)
 		if distance(my_pos, target_pos) >= 50:
 			logging.info("{} meters from target".format(distance(my_pos, target_pos)))
 			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': distance(my_pos, target_pos) - 45})
-			#time.sleep(1)
 		else:
 			GameServer.sendMessage(ServerMessageTypes.FIRE)
 		state = 'searching'
 
+	# banking state strategy: Make a b-line for the closest goal
+	# adjusting for getting hit/bumping into something,
+	# then go back to searching
 	elif state == 'banking':
 		heading = getheading(my_pos, (0, -100))
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
@@ -259,7 +260,7 @@ while True:
 				heading = getheading(my_pos, (0, -100))
 			GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
 			message = GameServer.readMessage()
-			if message['messageType'] == 23:
+			if message['messageType'] == 23: # 23 == Point banked
 				state = 'searching'
 				break
 			elif message['messageType'] == 18 and message['Type'] == 'Tank' and message['Name'] == args.name:
