@@ -234,6 +234,7 @@ while True:
 	if tank_dict['state'] == 'searching':
 		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)				
 
+	
 	elif tank_dict['state'] == 'targeting':
 		heading = getheading(tank_dict['my_tank']['pos'], tank_dict['target_tank']['pos'])
 		distance_to_target = distance(tank_dict['my_tank']['pos'], tank_dict['target_tank']['pos'])
@@ -246,6 +247,8 @@ while True:
 		else:
 			GameServer.sendMessage(ServerMessageTypes.FIRE)
 		tank_dict['state'] = 'searching'
+
+		
 
 	elif tank_dict['state'] == 'banking':
 		heading = getheading(tank_dict['my_tank']['pos'], (0, -100))
