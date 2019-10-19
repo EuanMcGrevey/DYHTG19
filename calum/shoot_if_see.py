@@ -158,6 +158,8 @@ class ServerComms(object):
 			binascii.hexlify(message)))
 		return self.ServerSocket.send(message)
 
+## HELPER FUNCTIONS
+
 def getheading(pos1, pos2):
 	heading = np.arctan2(pos2[1] - pos1[1], pos2[0] - pos1[0])
 	heading = np.degrees(heading)
@@ -166,6 +168,29 @@ def getheading(pos1, pos2):
 
 def distance(pos1, pos2):
  	return np.sqrt((pos2[1] - pos1[1])**2 + (pos2[0] - pos1[0])**2)
+
+def moveTo(position,tank_dict):
+	# get current position from tank_dict
+	x1 = tank_dict['X']
+	y1 = tank_dict['Y']
+	# get coords from parameters
+	goto = (position[0], position[1])
+	# get direction, turn to face, then move forward
+	d = distance(position, (x1,y1))
+	h = getheading(position, (x1,y1))
+	GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': d})
+	return
+
+
+elif state == 'pickinguphealth':
+		message = GameServer.readMessage()
+		if message['messageType'] == 18 and message['Type'] == 'HealthPickup':
+			healthx = message['X']
+			healthy = message['Y']
+			moveTo((healthx, healthy), tank_dict)
+	elif state == 'pickingupammo':
+		pass
+		# same as pickinguphealth above
 
 def update(tank_dict):
 	while True:
@@ -178,24 +203,12 @@ def update(tank_dict):
 					message['time'] = time.time()
 					message['pos'] = (message['X'], message['Y'])
 					tank_dict['my_tank']= message
-					
-
-<<<<<<< HEAD
-				else:
-					if tank_dict['state'] == 'searching':
-						tank_dict['state'] = 'targeting'
-					message['time'] = time.time()
-					message['pos'] = (message['X'], message['Y'])
-					tank_dict['target_tank']= message
-					GameServer.sendMessage(ServerMessageTypes.STOPTURN)
-=======
 				elif state == 'searching':
 					state = 'targeting'
 				# Don't know of any way to target closest possible target
 				target_pos = (message['X'],message['Y'])
 				GameServer.sendMessage(ServerMessageTypes.STOPTURN)
-		
->>>>>>> 2b7a5e548ac55729f994a4311af097185b1d6854
+
 		elif message['messageType'] == 24:
 			tank_dict['state'] = 'banking'
                         
@@ -238,36 +251,24 @@ tank_dict = {}
 tank_dict['state'] = 'searching' 
 
 while True:
-<<<<<<< HEAD
 	tank_dict = update(tank_dict)
 	if tank_dict['state'] == 'searching':
-=======
-
-	my_pos, my_heading, target_pos, state = update('searching')
-	if state == 'searching':
->>>>>>> 2b7a5e548ac55729f994a4311af097185b1d6854
 		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)				
 
 	elif tank_dict['state'] == 'targeting':
 		heading = getheading(tank_dict['my_tank']['pos'], tank_dict['target_tank']['pos'])
 		distance_to_target = distance(tank_dict['my_tank']['pos'], tank_dict['target_tank']['pos'])
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
-<<<<<<< HEAD
 		time.sleep(2)
 		if distance_to_target >= 50:
 			logging.info("{} meters from target".format(distance_to_target))
 			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': distance_to_target - 45})
 			time.sleep(1)
-=======
-		if distance(my_pos, target_pos) >= 50:
-			logging.info("{} meters from target".format(distance(my_pos, target_pos)))
-			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': distance(my_pos, target_pos) - 45})
->>>>>>> 2b7a5e548ac55729f994a4311af097185b1d6854
+
 		else:
 			GameServer.sendMessage(ServerMessageTypes.FIRE)
 		tank_dict['state'] = 'searching'
 
-<<<<<<< HEAD
 	elif tank_dict['state'] == 'banking':
 		heading = getheading(tank_dict['my_tank']['pos'], (0, -100))
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
@@ -279,24 +280,6 @@ while True:
 			if message['messageType'] == 23:
 				tank_dict['state'] = 'searching'
 				GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
-=======
-	# banking state strategy: Make a b-line for the closest goal
-	# adjusting for getting hit/bumping into something,
-	# then go back to searching
-	elif state == 'banking':
-		heading = getheading(my_pos, (0, -100))
-		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
-		GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
-		while True:
-			if my_pos[1] >= 0:
-				heading = getheading(my_pos, (0, 100))	
-			else:
-				heading = getheading(my_pos, (0, -100))
-			GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
-			message = GameServer.readMessage()
-			if message['messageType'] == 23: # 23 == Point banked
-				state = 'searching'
->>>>>>> 2b7a5e548ac55729f994a4311af097185b1d6854
 				break
 			elif message['messageType'] == 18 and message['Type'] == 'Tank' and message['Name'] == args.name:
 				tank_dict['my_tank']['pos'] = (message['X'],message['Y'])
