@@ -10,7 +10,7 @@ import random
 import numpy as np
 import time
 
-##logging.basicConfig(filename='example.log',level=logging.INFO)
+##logging.basicConfig(filename='example.log',level=logging.DEBUG)
 
 class ServerMessageTypes(object):
 	TEST = 0
@@ -159,10 +159,44 @@ class ServerComms(object):
 		return self.ServerSocket.send(message)
 
 def getheading(pos1, pos2):
-        heading = np.arctan2(pos2[1] - pos1[1], pos2[0] - pos1[0])
-        heading = np.degrees(heading)
-        heading = (-heading)%360
-        return np.abs(heading)
+	heading = np.arctan2(pos2[1] - pos1[1], pos2[0] - pos1[0])
+	heading = np.degrees(heading)
+	heading = (-heading)%360
+	return np.abs(heading)
+
+def distance(pos1, pos2):
+ 	return np.sqrt((pos2[1] - pos1[1])**2 + (pos2[0] - pos1[0])**2)
+
+def update():
+	target_pos = (0,0)
+	target = False
+	my_pos = (0,0)
+	my_heading = 0
+	while True:
+		start_time = time.time()
+		message = GameServer.readMessage()
+		end_time = time.time()
+	
+		if message['messageType'] == 18:
+			if message['Type'] == 'Tank':
+				if message['Name'] == args.name:
+					my_pos = (message['X'],message['Y'])
+					my_heading = message['Heading']
+					logging.info("my pos")
+
+				else:
+					logging.info("other pos")
+					target_pos = (message['X'],message['Y'])
+					target = True
+					GameServer.sendMessage(ServerMessageTypes.STOPTURN)
+
+		logging.info(end_time - start_time)
+		if (end_time - start_time) > 0.1:
+			break
+
+	return my_pos, my_heading, target_pos, target
+              
+        
 
 # Parse command line args
 parser = argparse.ArgumentParser()
@@ -188,36 +222,27 @@ logging.info("Creating tank with name '{}'".format(args.name))
 GameServer.sendMessage(ServerMessageTypes.CREATETANK, {'Name': args.name})
 
 # Main loop - read game messages, ignore them and randomly perform actions
-
-my_pos = (0,0)
-my_heading = 0
-target = False
 target_pos = (0,0)
+target = False
+my_pos = (0,0)
+
+my_heading = 0
 
 while True:
 	if target == False:
 		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)
-		message = GameServer.readMessage()
-		if message['messageType'] == 18:
-			if message['Type'] == 'Tank':
-				if message['Name'] == args.name:
-					my_pos = (message['X'],message['Y'])
-					my_heading = message['Heading']
-					logging.info("my pos")
-				else:
-					logging.info("other pos")
-					target_pos = (message['X'],message['Y'])
-					target = True
-					GameServer.sendMessage(ServerMessageTypes.STOPTURN)
+		my_pos, my_heading, target_pos, target = update()
 					
 
 	else:
-		logging.info("target pos {} my pos {}".format(target_pos,my_pos))
 		heading = getheading(my_pos, target_pos)
-		logging.info("targeing heading {} my heading {}".format(heading,my_heading))
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
 		time.sleep(2)
-		GameServer.sendMessage(ServerMessageTypes.FIRE)
+		if distance(my_pos, target_pos) >= 50:
+			logging.info("{} meters from target".format(distance(my_pos, target_pos)))
+			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': 20})
+		else:
+			GameServer.sendMessage(ServerMessageTypes.FIRE)
 		time.sleep(1)
 		target = False
 	
