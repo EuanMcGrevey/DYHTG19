@@ -231,9 +231,28 @@ my_pos = (0,0)
 my_heading = 0
 
 while True:
+<<<<<<< HEAD
 	my_pos, my_heading, target_pos, state = update('searching')
 	if state == 'searching':
 		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)				
+=======
+	if target == False:
+		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)
+		message = GameServer.readMessage()
+		if message['messageType'] == 18 && message['Type'] == 'Tank' && message['Name'] == args.name:
+			my_pos = (message['X'],message['Y'])
+			my_heading = message['Heading']
+			logging.info("my pos")
+		else:
+			logging.info("other pos")
+			target_pos = (message['X'],message['Y'])
+			target = True
+			GameServer.sendMessage(ServerMessageTypes.STOPTURN)
+			
+		# was merge conflict, james' problem now
+		my_pos, my_heading, target_pos, target = update()
+					
+>>>>>>> 4398a6fbb17f428846ebc588b5196de5bc04b19e
 
 	elif state == 'targeting':
 		heading = getheading(my_pos, target_pos)
@@ -265,3 +284,11 @@ while True:
 
 
 
+### Logically split the game mechanics into different functions
+
+# def searchFor(Enemy, Ammo, Health)
+
+# most basic turn function, turns 
+# def turnTo(message, int id) # where id determines 
+#		heading = getheading(my_pos, target_pos) # get my_pos and target_pos from message
+#		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})

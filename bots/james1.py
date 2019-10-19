@@ -179,20 +179,24 @@ GameServer.sendMessage(ServerMessageTypes.CREATETANK, {'Name': args.name})
 
 # Main loop - read game messages, ignore them and randomly perform actions
 i=0
+
+health = 3
+ammo = 10
+
+
 while True:
     message = GameServer.readMessage()
     print(message)
 
-    if i == 5:
-        if random.randint(0, 10) > 5:
-            logging.info("Firing")
-            GameServer.sendMessage(ServerMessageTypes.FIRE)
-    elif i == 10:
-        logging.info("Turning randomly")
-        GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': random.randint(0, 359)})
-    elif i == 15:
-        logging.info("Moving randomly")
-        GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': random.randint(0, 10)})
-    i = i + 1
-    if i > 20:
-        i = 0
+    if message['messageType'] == 18 && message['Type'] == 'Tank' && message['Name'] == args.name:
+        my_pos = (message['X'],message['Y'])
+        my_heading = message['Heading']
+        logging.info("my pos")
+    else:
+        logging.info("other pos")
+        target_pos = (message['X'],message['Y'])
+        target = True
+
+    if not aiming:
+        #TODO maybe base on x and y
+        GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)
