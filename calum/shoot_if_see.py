@@ -167,10 +167,7 @@ def getheading(pos1, pos2):
 def distance(pos1, pos2):
  	return np.sqrt((pos2[1] - pos1[1])**2 + (pos2[0] - pos1[0])**2)
 
-def update(state):
-	target_pos = (0,0)
-	my_pos = (0,0)
-	my_heading = 0
+def update(tank_dict):
 	while True:
 		start_time = time.time()
 		message = GameServer.readMessage()
@@ -179,23 +176,27 @@ def update(state):
 		if message['messageType'] == 18:
 			if message['Type'] == 'Tank':
 				if message['Name'] == args.name:
-					my_pos = (message['X'],message['Y'])
-					my_heading = message['Heading']
+					message['time'] = time.time()
+					message['pos'] = (message['X'], message['Y'])
+					tank_dict['my_tank']= message
+					
 
 				else:
-					if state == 'searching':
-						state = 'targeting'
-					target_pos = (message['X'],message['Y'])
+					if tank_dict['state'] == 'searching':
+						tank_dict['state'] = 'targeting'
+					message['time'] = time.time()
+					message['pos'] = (message['X'], message['Y'])
+					tank_dict['target_tank']= message
 					GameServer.sendMessage(ServerMessageTypes.STOPTURN)
 		elif message['messageType'] == 24:
-			state = 'banking'
+			tank_dict['state'] = 'banking'
                         
 
 		logging.info(end_time - start_time)
 		if (end_time - start_time) > 0.1:
 			break
 
-	return my_pos, my_heading, target_pos, state
+	return tank_dict
               
         
 
@@ -224,71 +225,44 @@ GameServer.sendMessage(ServerMessageTypes.CREATETANK, {'Name': args.name})
 
 
 
-target_pos = (0,0)
-state = 'searching'
-my_pos = (0,0)
 
-my_heading = 0
+tank_dict = {}
+tank_dict['state'] = 'searching' 
 
 while True:
-<<<<<<< HEAD
-	my_pos, my_heading, target_pos, state = update('searching')
-	if state == 'searching':
+	tank_dict = update(tank_dict)
+	if tank_dict['state'] == 'searching':
 		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)				
-=======
-	if target == False:
-		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)
-		message = GameServer.readMessage()
-		if message['messageType'] == 18 && message['Type'] == 'Tank' && message['Name'] == args.name:
-			my_pos = (message['X'],message['Y'])
-			my_heading = message['Heading']
-			logging.info("my pos")
-		else:
-			logging.info("other pos")
-			target_pos = (message['X'],message['Y'])
-			target = True
-			GameServer.sendMessage(ServerMessageTypes.STOPTURN)
-			
-		# was merge conflict, james' problem now
-		my_pos, my_heading, target_pos, target = update()
-					
->>>>>>> 4398a6fbb17f428846ebc588b5196de5bc04b19e
 
-	elif state == 'targeting':
-		heading = getheading(my_pos, target_pos)
+	elif tank_dict['state'] == 'targeting':
+		heading = getheading(tank_dict['my_tank']['pos'], tank_dict['target_tank']['pos'])
+		distance_to_target = distance(tank_dict['my_tank']['pos'], tank_dict['target_tank']['pos'])
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
 		time.sleep(2)
-		if distance(my_pos, target_pos) >= 50:
-			logging.info("{} meters from target".format(distance(my_pos, target_pos)))
-			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': distance(my_pos, target_pos) - 45})
+		if distance_to_target >= 50:
+			logging.info("{} meters from target".format(distance_to_target))
+			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': distance_to_target - 45})
 			time.sleep(1)
 		else:
 			GameServer.sendMessage(ServerMessageTypes.FIRE)
-		state = 'searching'
+		tank_dict['state'] = 'searching'
 
-	elif state == 'banking':
-		heading = getheading(my_pos, (0, -100))
+	elif tank_dict['state'] == 'banking':
+		heading = getheading(tank_dict['my_tank']['pos'], (0, -100))
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
 		GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
 		while True:
-			heading = getheading(my_pos, (0, -100))
-			GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
+			heading = getheading(tank_dict['my_tank']['pos'], (0, -100))
+			GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': tank_dict['my_tank']['heading']})
 			message = GameServer.readMessage()
 			if message['messageType'] == 23:
-				state = 'searching'
+				tank_dict['state'] = 'searching'
+				GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
 				break
 			elif message['messageType'] == 18 and message['Type'] == 'Tank' and message['Name'] == args.name:
-				my_pos = (message['X'],message['Y'])
-				my_heading = message['Heading']
+				tank_dict['my_tank']['pos'] = (message['X'],message['Y'])
+				tank_dict['my_tank']['heading'] = message['Heading']
 		
 
 
 
-### Logically split the game mechanics into different functions
-
-# def searchFor(Enemy, Ammo, Health)
-
-# most basic turn function, turns 
-# def turnTo(message, int id) # where id determines 
-#		heading = getheading(my_pos, target_pos) # get my_pos and target_pos from message
-#		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
