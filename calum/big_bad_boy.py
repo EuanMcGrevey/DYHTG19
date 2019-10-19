@@ -173,14 +173,14 @@ def update(tank_dict):
 		message = GameServer.readMessage()
 		end_time = time.time()
 	
-		if message['messageType'] == 18 and message['Type'] == 'Tank':
+		if message['messageType'] == 18:
+			if message['Type'] == 'Tank':
 				if message['Name'] == args.name:
 					message['time'] = time.time()
 					message['pos'] = (message['X'], message['Y'])
 					tank_dict['my_tank']= message
 					
 
-<<<<<<< HEAD
 				else:
 					if tank_dict['state'] == 'searching':
 						tank_dict['state'] = 'targeting'
@@ -188,14 +188,6 @@ def update(tank_dict):
 					message['pos'] = (message['X'], message['Y'])
 					tank_dict['target_tank']= message
 					GameServer.sendMessage(ServerMessageTypes.STOPTURN)
-=======
-				elif state == 'searching':
-					state = 'targeting'
-				# Don't know of any way to target closest possible target
-				target_pos = (message['X'],message['Y'])
-				GameServer.sendMessage(ServerMessageTypes.STOPTURN)
-		
->>>>>>> 2b7a5e548ac55729f994a4311af097185b1d6854
 		elif message['messageType'] == 24:
 			tank_dict['state'] = 'banking'
                         
@@ -213,7 +205,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
 parser.add_argument('-H', '--hostname', default='127.0.0.1', help='Hostname to connect to')
 parser.add_argument('-p', '--port', default=8052, type=int, help='Port to connect to')
-parser.add_argument('-n', '--name', default='Lo-pressure:Shoot_if_see', help='Name of bot')
+parser.add_argument('-n', '--name', default='TeamA:RandomBot', help='Name of bot')
 args = parser.parse_args()
 
 # Set up console logging
@@ -238,36 +230,23 @@ tank_dict = {}
 tank_dict['state'] = 'searching' 
 
 while True:
-<<<<<<< HEAD
 	tank_dict = update(tank_dict)
 	if tank_dict['state'] == 'searching':
-=======
-
-	my_pos, my_heading, target_pos, state = update('searching')
-	if state == 'searching':
->>>>>>> 2b7a5e548ac55729f994a4311af097185b1d6854
 		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)				
 
 	elif tank_dict['state'] == 'targeting':
 		heading = getheading(tank_dict['my_tank']['pos'], tank_dict['target_tank']['pos'])
 		distance_to_target = distance(tank_dict['my_tank']['pos'], tank_dict['target_tank']['pos'])
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
-<<<<<<< HEAD
 		time.sleep(2)
 		if distance_to_target >= 50:
 			logging.info("{} meters from target".format(distance_to_target))
 			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': distance_to_target - 45})
 			time.sleep(1)
-=======
-		if distance(my_pos, target_pos) >= 50:
-			logging.info("{} meters from target".format(distance(my_pos, target_pos)))
-			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': distance(my_pos, target_pos) - 45})
->>>>>>> 2b7a5e548ac55729f994a4311af097185b1d6854
 		else:
 			GameServer.sendMessage(ServerMessageTypes.FIRE)
 		tank_dict['state'] = 'searching'
 
-<<<<<<< HEAD
 	elif tank_dict['state'] == 'banking':
 		heading = getheading(tank_dict['my_tank']['pos'], (0, -100))
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
@@ -279,24 +258,6 @@ while True:
 			if message['messageType'] == 23:
 				tank_dict['state'] = 'searching'
 				GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
-=======
-	# banking state strategy: Make a b-line for the closest goal
-	# adjusting for getting hit/bumping into something,
-	# then go back to searching
-	elif state == 'banking':
-		heading = getheading(my_pos, (0, -100))
-		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
-		GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
-		while True:
-			if my_pos[1] >= 0:
-				heading = getheading(my_pos, (0, 100))	
-			else:
-				heading = getheading(my_pos, (0, -100))
-			GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
-			message = GameServer.readMessage()
-			if message['messageType'] == 23: # 23 == Point banked
-				state = 'searching'
->>>>>>> 2b7a5e548ac55729f994a4311af097185b1d6854
 				break
 			elif message['messageType'] == 18 and message['Type'] == 'Tank' and message['Name'] == args.name:
 				tank_dict['my_tank']['pos'] = (message['X'],message['Y'])

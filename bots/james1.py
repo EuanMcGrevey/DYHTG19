@@ -7,6 +7,7 @@ import binascii
 import struct
 import argparse
 import random
+import time
 
 
 class ServerMessageTypes(object):
@@ -182,21 +183,28 @@ i=0
 
 health = 3
 ammo = 10
-
+moving = False
 
 while True:
+    #Decoy bot
+
     message = GameServer.readMessage()
-    print(message)
 
-    if message['messageType'] == 18 && message['Type'] == 'Tank' && message['Name'] == args.name:
-        my_pos = (message['X'],message['Y'])
-        my_heading = message['Heading']
-        logging.info("my pos")
+    if not moving:
+        print("FUCK YOU")
+        GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
+        moving = True
+    if message["messageType"] == 18 and message['Name'] == args.name:
+        x,y = (message['X'],message['Y'])
+    if x > 0:
+        if y > 0:
+            GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING,{'Amount': random.randint(90,180)})#+45})
+        else:
+            GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING,{'Amount': random.randint(180,270)})#+45})
     else:
-        logging.info("other pos")
-        target_pos = (message['X'],message['Y'])
-        target = True
+        if y > 0:
+            GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING,{'Amount': random.randint(0,90)})#+45})
+        else:
+            GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING,{'Amount': (random.randint(270,360))})#+45)%360})
 
-    if not aiming:
-        #TODO maybe base on x and y
-        GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)
+    time.sleep(0.5)
