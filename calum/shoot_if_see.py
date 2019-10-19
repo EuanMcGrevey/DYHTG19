@@ -167,9 +167,8 @@ def getheading(pos1, pos2):
 def distance(pos1, pos2):
  	return np.sqrt((pos2[1] - pos1[1])**2 + (pos2[0] - pos1[0])**2)
 
-def update():
+def update(state):
 	target_pos = (0,0)
-	target = False
 	my_pos = (0,0)
 	my_heading = 0
 	while True:
@@ -182,19 +181,21 @@ def update():
 				if message['Name'] == args.name:
 					my_pos = (message['X'],message['Y'])
 					my_heading = message['Heading']
-					logging.info("my pos")
 
 				else:
-					logging.info("other pos")
+					if state == 'searching':
+						state = 'targeting'
 					target_pos = (message['X'],message['Y'])
-					target = True
 					GameServer.sendMessage(ServerMessageTypes.STOPTURN)
+		elif message['messageType'] == 24:
+			state = 'banking'
+                        
 
 		logging.info(end_time - start_time)
 		if (end_time - start_time) > 0.1:
 			break
 
-	return my_pos, my_heading, target_pos, target
+	return my_pos, my_heading, target_pos, state
               
         
 
@@ -221,31 +222,46 @@ GameServer = ServerComms(args.hostname, args.port)
 logging.info("Creating tank with name '{}'".format(args.name))
 GameServer.sendMessage(ServerMessageTypes.CREATETANK, {'Name': args.name})
 
-# Main loop - read game messages, ignore them and randomly perform actions
+
+
 target_pos = (0,0)
-target = False
+state = 'searching'
 my_pos = (0,0)
 
 my_heading = 0
 
 while True:
-	if target == False:
-		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)
-		my_pos, my_heading, target_pos, target = update()
-					
+	my_pos, my_heading, target_pos, state = update('searching')
+	if state == 'searching':
+		GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)				
 
-	else:
+	elif state == 'targeting':
 		heading = getheading(my_pos, target_pos)
 		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
 		time.sleep(2)
 		if distance(my_pos, target_pos) >= 50:
 			logging.info("{} meters from target".format(distance(my_pos, target_pos)))
-			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': 20})
+			GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': distance(my_pos, target_pos) - 45})
+			time.sleep(1)
 		else:
 			GameServer.sendMessage(ServerMessageTypes.FIRE)
-		time.sleep(1)
-		target = False
-	
+		state = 'searching'
+
+	elif state == 'banking':
+		heading = getheading(my_pos, (0, -100))
+		GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
+		GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
+		while True:
+			heading = getheading(my_pos, (0, -100))
+			GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': heading})
+			message = GameServer.readMessage()
+			if message['messageType'] == 23:
+				state = 'searching'
+				break
+			elif message['messageType'] == 18 and message['Type'] == 'Tank' and message['Name'] == args.name:
+				my_pos = (message['X'],message['Y'])
+				my_heading = message['Heading']
+		
 
 
 
