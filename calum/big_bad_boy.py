@@ -167,6 +167,20 @@ def getheading(pos1, pos2):
 def distance(pos1, pos2):
  	return np.sqrt((pos2[1] - pos1[1])**2 + (pos2[0] - pos1[0])**2)
 
+def moveTo(newpos,tank_dict):
+	# get current position from tank_dict
+	curpos = (tank_dict['X'],tank_dict['Y'])
+
+	# get direction, turn to face,
+	h = getheading(curpos, newpos)
+	GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': h})
+
+	# then move forward
+	d = distance(curpos, newpos)
+	GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': d})
+	return
+
+
 def update(tank_dict):
 	while True:
 		start_time = time.time()
@@ -179,7 +193,14 @@ def update(tank_dict):
 					message['time'] = time.time()
 					message['pos'] = (message['X'], message['Y'])
 					tank_dict['my_tank']= message
-					
+
+					tank_dict['ammo'] = message['Ammo']
+					if tank_dict['ammo'] == 0:
+						tank_dict['state'] = 'pickingupammo'
+						
+					tank_dict['health'] = message['Health']
+					if tank_dict['health'] == 1:
+						tank_dict['state'] = 'pickinguphealth'
 
 				else:
 					if tank_dict['state'] == 'searching':
@@ -188,6 +209,12 @@ def update(tank_dict):
 					message['pos'] = (message['X'], message['Y'])
 					tank_dict['target_tank']= message
 					GameServer.sendMessage(ServerMessageTypes.STOPTURN)
+
+			elif message['Type'] == 'HealthPickup':
+				tank_dict
+			elif message['Type'] == 'AmmoPickup':
+				tank_dict['ammo'] = message['']
+
 		elif message['messageType'] == 24:
 			tank_dict['state'] = 'banking'
                         
@@ -265,6 +292,18 @@ while True:
 			elif message['messageType'] == 18 and message['Type'] == 'Tank' and message['Name'] == args.name:
 				tank_dict['my_tank']['pos'] = (message['X'],message['Y'])
 				tank_dict['my_tank']['heading'] = message['Heading']
+
+	elif state == 'pickinguphealth':
+		message = GameServer.readMessage()
+		if message['messageType'] == 18 and message['Type'] == 'HealthPickup': # TODO add health location to tank_dict whenever we see it
+			healthpos = (message['X'], message['Y'])
+			moveTo(healthpos, tank_dict)
+	
+	elif state == 'pickingupammo':
+		message = GameServer.readMessage()
+		if message['messageType'] == 18 and message['Type'] == 'AmmoPickup':
+			ammopos = (message['X'], message['Y'])
+			moveTo(ammopos, tank_dict)
 		
 
 

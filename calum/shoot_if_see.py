@@ -169,27 +169,16 @@ def getheading(pos1, pos2):
 def distance(pos1, pos2):
  	return np.sqrt((pos2[1] - pos1[1])**2 + (pos2[0] - pos1[0])**2)
 
-def moveTo(position,tank_dict):
-	# get current position from tank_dict
-	x1 = tank_dict['X']
-	y1 = tank_dict['Y']
-	# get coords from parameters
-	goto = (position[0], position[1])
-	# get direction, turn to face, then move forward
-	d = distance(position, (x1,y1))
-	h = getheading(position, (x1,y1))
-	GameServer.sendMessage(ServerMessageTypes.MOVEFORWARDDISTANCE, {'Amount': d})
-	return
 
 
-elif state == 'pickinguphealth':
-		message = GameServer.readMessage()
-		if message['messageType'] == 18 and message['Type'] == 'HealthPickup':
-			healthx = message['X']
-			healthy = message['Y']
-			moveTo((healthx, healthy), tank_dict)
-	elif state == 'pickingupammo':
-		pass
+#elif state == 'pickinguphealth':
+#		message = GameServer.readMessage()
+#		if message['messageType'] == 18 and message['Type'] == 'HealthPickup':
+#			healthx = message['X']
+#			healthy = message['Y']
+#			moveTo((healthx, healthy), tank_dict)
+#	elif state == 'pickingupammo':
+#		pass
 		# same as pickinguphealth above
 
 def update(tank_dict):
