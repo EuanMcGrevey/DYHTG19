@@ -203,7 +203,7 @@ def logic(name):
 	# Spawn our tank
 	logging.info("Creating tank with name '{}'".format(name))
 	
-	points = 0
+	points = 1
 	my_pos = (0,0)
 	my_heading = 0
 	target = False
@@ -221,12 +221,26 @@ def logic(name):
 		# if health == 1 and health pack in FOV then b-line to health 
 		# if enemy then TurnToAndFire(direction)
 
-		if points > 0:
-			# If 
 		message = GameServer.readMessage()
+		#logging.info(message)
+
+
+		if points > 0:
+			GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
+			# b-line to nearest goal
+			# if tank.y >= 0 then head to 0,100
+			# else head to 0,-100
+			if message['Y'] >= 0:
+				direction = getheading((message['Y'],message['X']),(0,105))
+			else:
+				direction = getheading((message['Y'],message['X']),(0,-105))
+			GameServer.sendMessage(ServerMessageTypes.TURNTOHEADING, {'Amount': direction})
+			GameServer.sendMessage(ServerMessageTypes.TOGGLEFORWARD)
+
+			message = GameServer.readMessage()
 				
 		# Know where enemy is
-		elif :
+		elif True:
 			#logging.info("target pos {} my pos {}".format(target_pos,my_pos))
 			heading = getheading(my_pos, target_pos)
 			#logging.info("targeing heading {} my heading {}".format(heading,my_heading))
@@ -235,6 +249,7 @@ def logic(name):
 			target = False
 
 		else:
+			# If all else fails, look around 
 			GameServer.sendMessage(ServerMessageTypes.TOGGLELEFT)
 
 class Tank(threading.Thread):
